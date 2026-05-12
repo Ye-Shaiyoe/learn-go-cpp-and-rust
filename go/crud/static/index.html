@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go CRUD - Modern Task Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --glass: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 850px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: scale(1.02);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: var(--text-main);
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .items-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #f1f5f9;
+            transition: all 0.2s ease;
+        }
+
+        .item-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .item-info h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .item-info p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .item-info .id-tag {
+            font-family: monospace;
+            font-size: 0.75rem;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 10px;
+        }
+
+        .btn-edit {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .btn-edit:hover {
+            background: #dbeafe;
+        }
+
+        .btn-delete {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .btn-delete:hover {
+            background: #fee2e2;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            background: #1e293b;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .loading-spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Task Master Pro</h1>
+            <p>Kelola tugas dan inventaris Anda dengan elegan</p>
+        </header>
+
+        <div class="main-grid">
+            <div class="sidebar">
+                <!-- Create Form -->
+                <div class="card" id="formCard">
+                    <h2 id="formTitle"><i data-lucide="plus-circle"></i> Tambah Item</h2>
+                    <form id="mainForm">
+                        <input type="hidden" id="itemId">
+                        <div class="form-group">
+                            <label for="name">Nama Item</label>
+                            <input type="text" id="name" placeholder="Contoh: Belajar Golang" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Deskripsi</label>
+                            <textarea id="description" rows="4" placeholder="Apa yang ingin Anda lakukan?" required></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" id="submitBtn">
+                            <i data-lucide="save"></i> <span>Simpan Item</span>
+                        </button>
+                        <button type="button" class="btn-secondary" id="cancelBtn" style="display: none;">
+                            <i data-lucide="x"></i> Batal
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="card">
+                    <h2><i data-lucide="list"></i> Daftar Item</h2>
+                    <div id="loading" class="loading-spinner"></div>
+                    <div id="itemsList" class="items-container">
+                        <!-- Items will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        const API_BASE = '/items';
+        let isEditing = false;
+        
+        // DOM Elements
+        const mainForm = document.getElementById('mainForm');
+        const itemIdInput = document.getElementById('itemId');
+        const nameInput = document.getElementById('name');
+        const descInput = document.getElementById('description');
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const formTitle = document.getElementById('formTitle');
+        const itemsList = document.getElementById('itemsList');
+        const loading = document.getElementById('loading');
+        const toast = document.getElementById('toast');
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Show Toast Notification
+        function showToast(message, type = 'success') {
+            const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+            toast.innerHTML = `<i data-lucide="${icon}"></i> ${message}`;
+            toast.style.background = type === 'success' ? '#10b981' : '#ef4444';
+            toast.classList.add('show');
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Fetch Items
+        async function fetchItems() {
+            loading.style.display = 'block';
+            itemsList.innerHTML = '';
+            
+            try {
+                const response = await fetch(API_BASE);
+                const items = await response.json();
+                
+                if (items.length === 0) {
+                    itemsList.innerHTML = `
+                        <div class="empty-state">
+                            <i data-lucide="package-open" style="width: 48px; height: 48px; margin-bottom: 10px;"></i>
+                            <p>Belum ada data tersedia.</p>
+                        </div>
+                    `;
+                } else {
+                    items.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'item-card';
+                        card.innerHTML = `
+                            <div class="item-info">
+                                <h3>${item.name}</h3>
+                                <p>${item.description}</p>
+                                <span class="id-tag">ID: ${item.id}</span>
+                            </div>
+                            <div class="item-actions">
+                                <button onclick="editItem('${item.id}')" class="btn-icon btn-edit" title="Edit">
+                                    <i data-lucide="edit-3"></i>
+                                </button>
+                                <button onclick="deleteItem('${item.id}')" class="btn-icon btn-delete" title="Hapus">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                        `;
+                        itemsList.appendChild(card);
+                    });
+                }
+                lucide.createIcons();
+            } catch (error) {
+                showToast('Gagal memuat data', 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Handle Form Submit (Create & Update)
+        mainForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const itemData = {
+                name: nameInput.value.trim(),
+                description: descInput.value.trim()
+            };
+
+            const url = isEditing ? `${API_BASE}/${itemIdInput.value}` : API_BASE;
+            const method = isEditing ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(itemData)
+                });
+
+                if (response.ok) {
+                    showToast(isEditing ? 'Item berhasil diperbarui' : 'Item berhasil ditambahkan');
+                    resetForm();
+                    fetchItems();
+                } else {
+                    throw new Error();
+                }
+            } catch (error) {
+                showToast('Gagal menyimpan item', 'error');
+            }
+        });
+
+        // Edit Item
+        window.editItem = async (id) => {
+            try {
+                const response = await fetch(`${API_BASE}/${id}`);
+                const item = await response.json();
+                
+                itemIdInput.value = item.id;
+                nameInput.value = item.name;
+                descInput.value = item.description;
+                
+                isEditing = true;
+                formTitle.innerHTML = `<i data-lucide="edit"></i> Edit Item`;
+                submitBtn.innerHTML = `<i data-lucide="save"></i> <span>Update Item</span>`;
+                cancelBtn.style.display = 'flex';
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                nameInput.focus();
+                lucide.createIcons();
+            } catch (error) {
+                showToast('Gagal mengambil data item', 'error');
+            }
+        };
+
+        // Delete Item
+        window.deleteItem = async (id) => {
+            if (!confirm('Hapus item ini selamanya?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showToast('Item berhasil dihapus');
+                    fetchItems();
+                } else {
+                    throw new Error();
+                }
+            } catch (error) {
+                showToast('Gagal menghapus item', 'error');
+            }
+        };
+
+        // Cancel Edit
+        cancelBtn.addEventListener('click', resetForm);
+
+        function resetForm() {
+            isEditing = false;
+            mainForm.reset();
+            itemIdInput.value = '';
+            formTitle.innerHTML = `<i data-lucide="plus-circle"></i> Tambah Item`;
+            submitBtn.innerHTML = `<i data-lucide="save"></i> <span>Simpan Item</span>`;
+            cancelBtn.style.display = 'none';
+            lucide.createIcons();
+        }
+
+        // Initial Fetch
+        fetchItems();
+    </script>
+</body>
+</html>
